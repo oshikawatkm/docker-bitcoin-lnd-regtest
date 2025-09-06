@@ -1,0 +1,79 @@
+version: '3'
+
+services:
+  bitcoind:
+    image: ruimarinho/bitcoin-core:latest
+    container_name: bitcoind
+    command:
+      - "-regtest"                # 開発用ネットワーク
+      - "-printtoconsole"
+      - "-rpcallowip=0.0.0.0/0"
+      - "-rpcbind=0.0.0.0"
+      - "-rpcuser=rpcuser"
+      - "-rpcpassword=rpcpass"
+      - "-txindex=1"
+      - "-zmqpubrawblock=tcp://0.0.0.0:28332"
+      - "-zmqpubrawtx=tcp://0.0.0.0:28333"
+      - "-fallbackfee=0.0002"
+    ports:
+      - "18443:18443"             # RPC
+      - "18444:18444"             # P2P
+      - "28332:28332"   # ZMQ block
+      - "28333:28333"   # ZMQ tx
+    volumes:
+      - bitcoind-data:/home/bitcoin/.bitcoin
+
+  alice:
+    build: ./lnd
+    container_name: alice
+    command:
+      - "--alias=alice"
+      - "--bitcoin.active"
+      - "--bitcoin.regtest"
+      - "--bitcoin.node=bitcoind"
+      - "--bitcoind.rpcuser=rpcuser"
+      - "--bitcoind.rpcpass=rpcpass"
+      - "--bitcoind.rpchost=bitcoind:18443"
+      - "--bitcoind.zmqpubrawblock=tcp://bitcoind:28332"
+      - "--bitcoind.zmqpubrawtx=tcp://bitcoind:28333"
+      - "--rpclisten=0.0.0.0:10009"
+      - "--restlisten=0.0.0.0:8080"
+      - "--listen=0.0.0.0:9735"
+    ports:
+      - "10009:10009"
+      - "8082:8080"
+      - "9735:9735"
+    depends_on:
+      - bitcoind
+    volumes:
+      - alice-data:/root/.lnd
+
+  bob:
+    build: ./lnd
+    container_name: bob
+    command:
+      - "--alias=bob"
+      - "--bitcoin.active"
+      - "--bitcoin.regtest"
+      - "--bitcoin.node=bitcoind"
+      - "--bitcoind.rpcuser=rpcuser"
+      - "--bitcoind.rpcpass=rpcpass"
+      - "--bitcoind.rpchost=bitcoind:18443"
+      - "--bitcoind.zmqpubrawblock=tcp://bitcoind:28332"
+      - "--bitcoind.zmqpubrawtx=tcp://bitcoind:28333"
+      - "--rpclisten=0.0.0.0:10010"
+      - "--restlisten=0.0.0.0:8081"
+      - "--listen=0.0.0.0:9736"
+    ports:
+      - "10010:10010"
+      - "8083:8080"
+      - "9736:9736"
+    depends_on:
+      - bitcoind
+    volumes:
+      - bob-data:/root/.lnd
+
+volumes:
+  bitcoind-data:
+  alice-data:
+  bob-data:
