@@ -48,6 +48,23 @@ services:
     volumes:
       - alice-data:/root/.lnd
 
+  tapd-alice:
+    image: lightninglabs/tapd:latest
+    container_name: tapd-alice
+    command:
+      - "--network=regtest"
+      - "--taprpcserver=0.0.0.0:10029"
+      - "--lnd.host=alice:10009"
+      - "--lnd.macaroonpath=/root/.lnd/data/chain/bitcoin/regtest/admin.macaroon"
+      - "--lnd.tlspath=/root/.lnd/tls.cert"
+    depends_on:
+      - alice
+    volumes:
+      - tapd-alice-data:/root/.tapd
+      - alice-data:/root/.lnd:ro
+    ports:
+      - "10029:10029"
+
   bob:
     build: ./lnd
     container_name: bob
@@ -73,7 +90,26 @@ services:
     volumes:
       - bob-data:/root/.lnd
 
+  tapd-bob:
+    image: lightninglabs/tapd:latest
+    container_name: tapd-bob
+    command:
+      - "--network=regtest"
+      - "--taprpcserver=0.0.0.0:10030"
+      - "--lnd.host=bob:10010"
+      - "--lnd.macaroonpath=/root/.lnd/data/chain/bitcoin/regtest/admin.macaroon"
+      - "--lnd.tlspath=/root/.lnd/tls.cert"
+    depends_on:
+      - bob
+    volumes:
+      - tapd-bob-data:/root/.tapd
+      - bob-data:/root/.lnd:ro
+    ports:
+      - "10030:10030"
+
 volumes:
   bitcoind-data:
   alice-data:
   bob-data:
+  tapd-alice-data:
+  tapd-bob-data:
